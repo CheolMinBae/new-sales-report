@@ -1,0 +1,93 @@
+# Excel 임시 파일들
+~$*.xlsx
+~$*.xls
+~$*.xlsm
+~$*.xlsb
+~$*.xltx
+~$*.xltm
+
+# Excel 백업 파일들
+*.xlk
+*.bak
+
+# Excel 복구 파일들
+*.tmp
+
+# Office 자동 복구 파일들
+*.asd
+
+# Windows 시스템 파일들
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS 시스템 파일들
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# 로그 파일들
+*.log
+*.txt.log
+
+# 디버그 파일들
+*.pdb
+*.idb
+
+# Visual Studio Code 설정
+.vscode/
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/extensions.json
+
+# JetBrains IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# 압축 파일들 (필요시 제외)
+*.zip
+*.rar
+*.7z
+
+# 개인 설정 파일들
+config.local.*
+*.local
+
+# 테스트 파일들
+test_*.xlsx
+test_*.xls
+temp_*.xlsx
+temp_*.xls
+
+# 출력 파일들
+output/
+exports/
+reports/
+
+# 민감한 데이터 파일들
+*password*
+*secret*
+*private*
+*credential*
+
+# Node.js (만약 웹 기능이 있다면)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python (만약 파이썬 스크립트가 있다면)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/ 
