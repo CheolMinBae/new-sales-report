@@ -1,7 +1,1 @@
-{
-  "/page": "app/page.js",
-  "/test-bulk/page": "app/test-bulk/page.js",
-  "/api/bulk-data/submit/route": "app/api/bulk-data/submit/route.js",
-  "/api/excel/route": "app/api/excel/route.js",
-  "/api/dashboard/route": "app/api/dashboard/route.js"
-}
+{}

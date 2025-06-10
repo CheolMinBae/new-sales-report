@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  sales-report-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      # 데이터 영속화를 위한 볼륨 마운트
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/debug"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s 
