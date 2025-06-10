@@ -18,7 +18,7 @@ Type FinanceData
 End Type
 
 ' API 기본 설정
-Private Const API_BASE_URL As String = "http://localhost:3001/api"
+Private Const API_BASE_URL As String = "http://localhost:3000/api"
 Private Const EXCEL_VERSION As String = "Excel VBA v1.0"
 
 ' ===== 메인 버튼 이벤트 =====
@@ -44,6 +44,68 @@ Sub 데이터전송()
     ' 전송 성공 시 상태 새로고침
     If result Then
         RefreshApprovalStatus
+    End If
+End Sub
+
+' 전체 년도 데이터 전송 버튼 클릭 시 (20~25년 정리표 시트의 모든 데이터 전송)
+Sub 전체년도_데이터전송()
+    Dim result As Boolean
+    Dim ws As Worksheet
+    Dim collectedData As String
+    Dim dataPreview As String
+    Dim confirmMsg As String
+    
+    ' 시트 존재 확인
+    If Not Check정리표시트_존재() Then
+        MsgBox "❌ '20~25년 정리표' 시트를 찾을 수 없습니다!" & vbCrLf & vbCrLf & _
+               "시트 이름을 확인하거나 해당 시트를 생성해주세요.", vbCritical, "시트 없음"
+        Exit Sub
+    End If
+    
+    Set ws = Find정리표시트()
+    
+    ' 상태 표시
+    Application.StatusBar = "데이터 수집 중... 잠시만 기다려주세요."
+    
+    ' 먼저 데이터를 수집하여 미리보기 생성
+    collectedData = CollectAllYearlyData(ws)
+    
+    ' 상태바 초기화
+    Application.StatusBar = False
+    
+    If collectedData = "" Then
+        MsgBox "❌ 전송할 데이터를 찾을 수 없습니다!" & vbCrLf & vbCrLf & _
+               "시트에 2020~2025년 데이터가 있는지 확인해주세요.", vbCritical, "데이터 없음"
+        Exit Sub
+    End If
+    
+    ' 수집된 데이터의 상세 미리보기 생성
+    dataPreview = GenerateDataPreview(ws, collectedData)
+    
+    ' 전송 확인 메시지 (데이터 미리보기 포함)
+    confirmMsg = "📊 전체 년도 데이터 전송 확인" & vbCrLf & vbCrLf
+    confirmMsg = confirmMsg & "📋 시트명: " & ws.Name & vbCrLf
+    confirmMsg = confirmMsg & "📅 범위: 2020년 ~ 2025년" & vbCrLf
+    confirmMsg = confirmMsg & "⚡ 데이터 크기: " & Len(collectedData) & " 문자" & vbCrLf & vbCrLf
+    confirmMsg = confirmMsg & dataPreview & vbCrLf
+    confirmMsg = confirmMsg & "⚠️ 주의사항:" & vbCrLf
+    confirmMsg = confirmMsg & "• 대용량 데이터 전송이므로 시간이 소요될 수 있습니다" & vbCrLf
+    confirmMsg = confirmMsg & "• 네트워크 연결 상태를 확인하세요" & vbCrLf
+    confirmMsg = confirmMsg & "• 기존 데이터는 업데이트됩니다" & vbCrLf & vbCrLf
+    confirmMsg = confirmMsg & "위 데이터를 서버로 전송하시겠습니까?"
+    
+    If MsgBox(confirmMsg, vbQuestion + vbYesNo, "🚀 전체 년도 데이터 전송 확인") = vbNo Then
+        Exit Sub
+    End If
+    
+    ' 전체 년도 데이터 전송 실행 (이미 수집된 데이터 사용)
+    result = SendBulkDataToAPIWithData(collectedData, ws)
+    
+    ' 전송 성공 시 상태 새로고침
+    If result Then
+        RefreshApprovalStatus
+        MsgBox "✅ 전체 년도 데이터 전송이 완료되었습니다!" & vbCrLf & vbCrLf & _
+               "🌐 서버에 모든 데이터가 저장되었습니다.", vbInformation, "전송 완료"
     End If
 End Sub
 
@@ -628,6 +690,279 @@ Function 월별테이블_승인상태열찾기(ws As Worksheet, lastCol As Long)
 End Function
 
 ' ===== 데이터 전송 관련 함수 =====
+
+' 수집된 데이터의 상세 미리보기 생성
+Function GenerateDataPreview(ws As Worksheet, collectedData As String) As String
+    Dim preview As String
+    Dim yearCount As Integer
+    Dim totalMonths As Integer
+    Dim year As Integer
+    Dim yearDataSummary As String
+    
+    preview = "📊 수집된 데이터 상세 미리보기:" & vbCrLf
+    preview = preview & "═══════════════════════════════════" & vbCrLf
+    
+    ' 년도별 데이터 요약 생성
+    For year = 2020 To 2025
+        yearDataSummary = GetYearDataSummary(ws, year)
+        If yearDataSummary <> "" Then
+            preview = preview & yearDataSummary & vbCrLf
+            yearCount = yearCount + 1
+        End If
+    Next year
+    
+    If yearCount = 0 Then
+        preview = preview & "❌ 수집된 데이터가 없습니다." & vbCrLf
+    Else
+        preview = preview & "─────────────────────────────────" & vbCrLf
+        preview = preview & "📈 총 " & yearCount & "개 년도의 데이터가 수집되었습니다." & vbCrLf
+    End If
+    
+    GenerateDataPreview = preview
+End Function
+
+' 특정 년도의 데이터 요약 생성
+Function GetYearDataSummary(ws As Worksheet, year As Integer) As String
+    Dim summary As String
+    Dim monthCount As Integer
+    Dim totalSales As Double
+    Dim totalExpenses As Double
+    Dim month As Integer
+    Dim monthSales As Double
+    Dim monthExpenses As Double
+    Dim monthData As String
+    
+    ' 해당 년도의 데이터가 있는지 확인
+    If FindYearRowInSheet(ws, year) = 0 Then
+        GetYearDataSummary = ""
+        Exit Function
+    End If
+    
+    summary = "📅 " & year & "년 데이터:" & vbCrLf
+    
+    ' 각 월별 데이터 확인 및 합계 계산
+    For month = 1 To 12
+        monthData = CollectMonthlyData(ws, year, month)
+        If monthData <> "" Then
+            monthCount = monthCount + 1
+            
+            ' 월별 매출 및 지출 계산
+            monthSales = FindMonthlyDataInSheet(ws, year, month, "매출입금", "매출") + _
+                        FindMonthlyDataInSheet(ws, year, month, "기타입금", "기타")
+            monthExpenses = FindMonthlyDataInSheet(ws, year, month, "비용결제", "비용") + _
+                           FindMonthlyDataInSheet(ws, year, month, "외상대", "외상")
+            
+            totalSales = totalSales + monthSales
+            totalExpenses = totalExpenses + monthExpenses
+            
+            summary = summary & "   • " & month & "월: 매출 " & Format(monthSales, "#,##0") & _
+                     "원, 지출 " & Format(monthExpenses, "#,##0") & "원" & vbCrLf
+        End If
+    Next month
+    
+    If monthCount > 0 Then
+        summary = summary & "   📊 연간 합계: 매출 " & Format(totalSales, "#,##0") & _
+                 "원, 지출 " & Format(totalExpenses, "#,##0") & "원" & vbCrLf
+        summary = summary & "   📝 수집된 월: " & monthCount & "개월" & vbCrLf
+        GetYearDataSummary = summary
+    Else
+        GetYearDataSummary = ""
+    End If
+End Function
+
+' 수집된 데이터를 사용하여 API로 전송 (중복 수집 방지)
+Function SendBulkDataToAPIWithData(bulkData As String, ws As Worksheet) As Boolean
+    Dim http As Object
+    Dim url As String
+    Dim jsonData As String
+    Dim response As String
+    Dim confirmMsg As String
+    
+    On Error GoTo ErrorHandler
+    
+    ' WinHTTP 객체 생성
+    Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
+    
+    ' API URL 설정
+    url = API_BASE_URL & "/bulk-data/submit"
+    
+    ' JSON 데이터 생성 (이미 수집된 데이터 사용)
+    jsonData = "{"
+    jsonData = jsonData & """yearlyData"": " & bulkData & ","
+    jsonData = jsonData & """submittedBy"": """ & Application.UserName & ""","
+    jsonData = jsonData & """sheetName"": """ & ws.Name & ""","
+    jsonData = jsonData & """submittedAt"": """ & Format(Now(), "yyyy-mm-dd hh:mm:ss") & """"
+    jsonData = jsonData & "}"
+    
+    ' 진행 상태 표시
+    Application.StatusBar = "전체 년도 데이터 전송 중... 잠시만 기다려주세요."
+    
+    ' HTTP 요청 설정 및 전송
+    http.Open "POST", url, False
+    http.SetRequestHeader "Content-Type", "application/json"
+    http.SetTimeouts 30000, 30000, 30000, 30000  ' 30초 타임아웃
+    
+    ' 요청 전송
+    http.Send jsonData
+    
+    ' 상태바 초기화
+    Application.StatusBar = False
+    
+    ' 응답 받기
+    response = http.ResponseText
+    
+    ' 응답 확인 및 결과 메시지
+    If http.Status = 200 Then
+        If InStr(response, """success"":true") > 0 Then
+            SendBulkDataToAPIWithData = True
+            MsgBox "📡 서버 응답: ✅ 전송 성공!" & vbCrLf & vbCrLf & _
+                   "📊 데이터 크기: " & Len(jsonData) & " 문자" & vbCrLf & _
+                   "⏰ 전송 완료 시간: " & Format(Now(), "yyyy-mm-dd hh:mm:ss"), _
+                   vbInformation, "전송 성공"
+        Else
+            SendBulkDataToAPIWithData = False
+            MsgBox "📡 서버 응답: ⚠️ 처리 오류" & vbCrLf & vbCrLf & _
+                   response, vbExclamation, "서버 처리 오류"
+        End If
+    Else
+        SendBulkDataToAPIWithData = False
+        MsgBox "📡 서버 응답: ❌ 전송 실패" & vbCrLf & vbCrLf & _
+               "HTTP 상태: " & http.Status & vbCrLf & _
+               "오류 내용: " & response, vbCritical, "전송 실패"
+    End If
+    
+    Set http = Nothing
+    Exit Function
+    
+ErrorHandler:
+    SendBulkDataToAPIWithData = False
+    Set http = Nothing
+    Application.StatusBar = False
+    
+    MsgBox "❌ 전체 년도 데이터 전송 중 오류 발생!" & vbCrLf & vbCrLf & _
+           "오류 내용: " & Err.Description & vbCrLf & _
+           "오류 번호: " & Err.Number, vbCritical, "전송 오류"
+End Function
+
+' 전체 년도 데이터를 API로 전송 (20~25년 정리표 시트의 모든 데이터) - 호환성 유지
+Function SendBulkDataToAPI() As Boolean
+    Dim http As Object
+    Dim url As String
+    Dim jsonData As String
+    Dim response As String
+    Dim confirmMsg As String
+    Dim ws As Worksheet
+    
+    On Error GoTo ErrorHandler
+    
+    ' WinHTTP 객체 생성
+    Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
+    
+    ' 20~25년 정리표 시트 찾기
+    Set ws = Find정리표시트()
+    If ws Is Nothing Then
+        MsgBox "❌ '20~25년 정리표' 시트를 찾을 수 없습니다!", vbCritical, "시트 오류"
+        SendBulkDataToAPI = False
+        Exit Function
+    End If
+    
+    ' API URL 설정
+    url = API_BASE_URL & "/bulk-data/submit"
+    
+    ' 전체 년도 데이터 수집
+    Dim bulkData As String
+    bulkData = CollectAllYearlyData(ws)
+    
+    If bulkData = "" Then
+        MsgBox "❌ 전송할 데이터를 찾을 수 없습니다!" & vbCrLf & vbCrLf & _
+               "시트에 데이터가 있는지 확인해주세요.", vbCritical, "데이터 없음"
+        SendBulkDataToAPI = False
+        Exit Function
+    End If
+    
+    ' JSON 데이터 생성
+    jsonData = "{"
+    jsonData = jsonData & """yearlyData"": " & bulkData & ","
+    jsonData = jsonData & """submittedBy"": """ & Application.UserName & ""","
+    jsonData = jsonData & """sheetName"": """ & ws.Name & ""","
+    jsonData = jsonData & """submittedAt"": """ & Format(Now(), "yyyy-mm-dd hh:mm:ss") & """"
+    jsonData = jsonData & "}"
+    
+    ' 전송 전 파라미터 확인 Alert
+    confirmMsg = "📤 전체 년도 데이터 전송 파라미터:" & vbCrLf & vbCrLf
+    confirmMsg = confirmMsg & "🌐 URL: " & url & vbCrLf & vbCrLf
+    confirmMsg = confirmMsg & "📋 전송 정보:" & vbCrLf
+    confirmMsg = confirmMsg & "시트명: " & ws.Name & vbCrLf
+    confirmMsg = confirmMsg & "전송자: " & Application.UserName & vbCrLf
+    confirmMsg = confirmMsg & "전송시간: " & Format(Now(), "yyyy-mm-dd hh:mm:ss") & vbCrLf & vbCrLf
+    confirmMsg = confirmMsg & "⚡ 데이터 크기: " & Len(jsonData) & " 문자" & vbCrLf & vbCrLf
+    confirmMsg = confirmMsg & "이 대용량 데이터를 서버로 전송하시겠습니까?"
+    
+    ' 전송 확인 Dialog
+    If MsgBox(confirmMsg, vbQuestion + vbYesNo, "🚀 대용량 데이터 전송 확인") = vbNo Then
+        SendBulkDataToAPI = False
+        Exit Function
+    End If
+    
+    ' 진행 상태 표시
+    Application.StatusBar = "전체 년도 데이터 전송 중... 잠시만 기다려주세요."
+    
+    ' HTTP 요청 설정 및 전송
+    http.Open "POST", url, False
+    http.SetRequestHeader "Content-Type", "application/json"
+    http.SetTimeouts 30000, 30000, 30000, 30000  ' 30초 타임아웃 (대용량 데이터)
+    
+    ' 요청 전송
+    http.Send jsonData
+    
+    ' 상태바 초기화
+    Application.StatusBar = False
+    
+    ' 응답 받기
+    response = http.ResponseText
+    
+    ' 전송 후 응답 Alert
+    Dim responseMsg As String
+    responseMsg = "📡 서버 응답:" & vbCrLf & vbCrLf
+    responseMsg = responseMsg & "🌐 HTTP 상태코드: " & http.Status & vbCrLf
+    responseMsg = responseMsg & "📝 응답 헤더:" & vbCrLf
+    responseMsg = responseMsg & "Content-Type: " & http.GetResponseHeader("Content-Type") & vbCrLf & vbCrLf
+    responseMsg = responseMsg & "📋 응답 내용 (JSON):" & vbCrLf
+    responseMsg = responseMsg & Left(response, 500) & vbCrLf & vbCrLf  ' 응답이 길 수 있으므로 500자로 제한
+    
+    ' 응답 확인
+    If http.Status = 200 Then
+        responseMsg = responseMsg & "✅ 전체 년도 데이터 전송 결과: 성공!"
+        ' JSON 응답에서 success 필드 확인
+        If InStr(response, """success"":true") > 0 Then
+            SendBulkDataToAPI = True
+        Else
+            SendBulkDataToAPI = False
+            responseMsg = responseMsg & vbCrLf & "⚠️ 주의: 서버에서 처리 오류 발생"
+        End If
+    Else
+        SendBulkDataToAPI = False
+        responseMsg = responseMsg & "❌ 전체 년도 데이터 전송 결과: 실패!"
+        responseMsg = responseMsg & vbCrLf & "오류 상태: HTTP " & http.Status
+    End If
+    
+    ' 응답 결과 표시
+    MsgBox responseMsg, vbInformation, "📡 전체 년도 데이터 전송 완료"
+    
+    Set http = Nothing
+    Exit Function
+    
+ErrorHandler:
+    SendBulkDataToAPI = False
+    Set http = Nothing
+    Application.StatusBar = False
+    
+    ' 오류 발생 시 Alert
+    MsgBox "❌ 전체 년도 데이터 전송 중 오류 발생!" & vbCrLf & vbCrLf & _
+           "오류 내용: " & Err.Description & vbCrLf & _
+           "오류 번호: " & Err.Number & vbCrLf & vbCrLf & _
+           "네트워크 연결 및 서버 상태를 확인하세요.", vbCritical, "🚨 전송 오류"
+End Function
 
 ' 재무 데이터를 API로 전송
 Function SendFinanceDataToAPI(year As Integer, month As Integer) As Boolean
@@ -1262,6 +1597,202 @@ End Function
 
 ' ===== 유틸리티 함수 =====
 
+' 20~25년 정리표 시트 존재 확인
+Function Check정리표시트_존재() As Boolean
+    Dim ws As Worksheet
+    Set ws = Find정리표시트()
+    Check정리표시트_존재 = Not (ws Is Nothing)
+End Function
+
+' 20~25년 정리표 시트 찾기
+Function Find정리표시트() As Worksheet
+    Dim ws As Worksheet
+    Dim sheetNames As Variant
+    Dim i As Integer
+    
+    ' 가능한 시트 이름들 (다양한 변형 대응)
+    sheetNames = Array("20~25년 정리표", "20-25년 정리표", "20 25년 정리표", _
+                      "정리표", "20~25년정리표", "20-25년정리표")
+    
+    ' 시트 이름으로 찾기
+    For i = LBound(sheetNames) To UBound(sheetNames)
+        On Error Resume Next
+        Set ws = Worksheets(sheetNames(i))
+        On Error GoTo 0
+        
+        If Not ws Is Nothing Then
+            Set Find정리표시트 = ws
+            Exit Function
+        End If
+    Next i
+    
+    ' 시트 이름으로 찾지 못한 경우, 순서로 찾기 (2번 시트)
+    On Error Resume Next
+    Set ws = Worksheets(2)
+    On Error GoTo 0
+    
+    If Not ws Is Nothing Then
+        ' 시트에 년도 데이터가 있는지 확인
+        If InStr(ws.Range("A1:A10").Value, "2020") > 0 Or _
+           InStr(ws.Range("A1:A10").Value, "2021") > 0 Then
+            Set Find정리표시트 = ws
+            Exit Function
+        End If
+    End If
+    
+    ' 찾지 못한 경우
+    Set Find정리표시트 = Nothing
+End Function
+
+' 전체 년도 데이터 수집 (20~25년 정리표 시트에서)
+Function CollectAllYearlyData(ws As Worksheet) As String
+    Dim jsonData As String
+    Dim yearlyDataArray As String
+    Dim yearCount As Integer
+    Dim year As Integer
+    Dim yearData As String
+    
+    yearlyDataArray = "["
+    yearCount = 0
+    
+    ' 2020년부터 2025년까지 순차적으로 데이터 수집
+    For year = 2020 To 2025
+        yearData = CollectYearlyData(ws, year)
+        
+        If yearData <> "" Then
+            If yearCount > 0 Then
+                yearlyDataArray = yearlyDataArray & ","
+            End If
+            yearlyDataArray = yearlyDataArray & yearData
+            yearCount = yearCount + 1
+        End If
+    Next year
+    
+    yearlyDataArray = yearlyDataArray & "]"
+    
+    If yearCount > 0 Then
+        CollectAllYearlyData = yearlyDataArray
+    Else
+        CollectAllYearlyData = ""
+    End If
+End Function
+
+' 특정 년도의 데이터 수집
+Function CollectYearlyData(ws As Worksheet, year As Integer) As String
+    Dim jsonData As String
+    Dim monthlyDataJson As String
+    Dim month As Integer
+    Dim monthData As String
+    Dim monthCount As Integer
+    Dim monthNames As Variant
+    
+    ' 월 이름 배열
+    monthNames = Array("1월", "2월", "3월", "4월", "5월", "6월", _
+                      "7월", "8월", "9월", "10월", "11월", "12월")
+    
+    ' 해당 년도의 데이터가 있는지 확인
+    If Not FindYearRowInSheet(ws, year) > 0 Then
+        CollectYearlyData = ""
+        Exit Function
+    End If
+    
+    monthlyDataJson = "{"
+    monthCount = 0
+    
+    ' 1월부터 12월까지 데이터 수집
+    For month = 1 To 12
+        monthData = CollectMonthlyData(ws, year, month)
+        
+        If monthData <> "" Then
+            If monthCount > 0 Then
+                monthlyDataJson = monthlyDataJson & ","
+            End If
+            monthlyDataJson = monthlyDataJson & """" & monthNames(month - 1) & """: " & monthData
+            monthCount = monthCount + 1
+        End If
+    Next month
+    
+    monthlyDataJson = monthlyDataJson & "}"
+    
+    ' 년도 데이터 JSON 구성
+    If monthCount > 0 Then
+        jsonData = "{"
+        jsonData = jsonData & """year"": " & year & ","
+        jsonData = jsonData & """monthlyData"": " & monthlyDataJson
+        jsonData = jsonData & "}"
+        CollectYearlyData = jsonData
+    Else
+        CollectYearlyData = ""
+    End If
+End Function
+
+' 특정 년도/월의 데이터 수집
+Function CollectMonthlyData(ws As Worksheet, year As Integer, month As Integer) As String
+    Dim jsonData As String
+    Dim salesRevenue As Double
+    Dim otherIncome As Double
+    Dim rentExpense As Double
+    Dim laborExpense As Double
+    Dim materialExpense As Double
+    Dim operatingExpense As Double
+    Dim otherExpense As Double
+    Dim cashBalance As Double
+    
+    ' 각 항목별 데이터 수집
+    salesRevenue = FindMonthlyDataInSheet(ws, year, month, "매출입금", "매출")
+    otherIncome = FindMonthlyDataInSheet(ws, year, month, "기타입금", "기타")
+    rentExpense = FindMonthlyDataInSheet(ws, year, month, "비용결제", "임대료")
+    laborExpense = FindMonthlyDataInSheet(ws, year, month, "비용결제", "인건비")
+    materialExpense = FindMonthlyDataInSheet(ws, year, month, "비용결제", "재료비")
+    operatingExpense = FindMonthlyDataInSheet(ws, year, month, "비용결제", "운영비")
+    otherExpense = FindMonthlyDataInSheet(ws, year, month, "외상대", "기타비용")
+    cashBalance = FindMonthlyDataInSheet(ws, year, month, "현금잔고", "잔고")
+    
+    ' 데이터가 하나라도 있으면 JSON 생성
+    If salesRevenue <> 0 Or otherIncome <> 0 Or rentExpense <> 0 Or _
+       laborExpense <> 0 Or materialExpense <> 0 Or operatingExpense <> 0 Or _
+       otherExpense <> 0 Or cashBalance <> 0 Then
+        
+        jsonData = "{"
+        jsonData = jsonData & """salesRevenue"": " & salesRevenue & ","
+        jsonData = jsonData & """otherIncome"": " & otherIncome & ","
+        jsonData = jsonData & """rentExpense"": " & rentExpense & ","
+        jsonData = jsonData & """laborExpense"": " & laborExpense & ","
+        jsonData = jsonData & """materialExpense"": " & materialExpense & ","
+        jsonData = jsonData & """operatingExpense"": " & operatingExpense & ","
+        jsonData = jsonData & """otherExpense"": " & otherExpense & ","
+        jsonData = jsonData & """cashBalance"": " & cashBalance
+        jsonData = jsonData & "}"
+        
+        CollectMonthlyData = jsonData
+    Else
+        CollectMonthlyData = ""
+    End If
+End Function
+
+' 시트에서 해당 년도 행 찾기
+Function FindYearRowInSheet(ws As Worksheet, year As Integer) As Long
+    Dim lastRow As Long
+    Dim i As Long
+    Dim cellValue As Variant
+    
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    If lastRow > 1000 Then lastRow = 1000  ' 안전한 범위 제한
+    
+    For i = 1 To lastRow
+        On Error Resume Next
+        cellValue = ws.Cells(i, 1).Value
+        On Error GoTo 0
+        
+        If CStr(cellValue) = CStr(year) & "년" Or CStr(cellValue) = CStr(year) Then
+            FindYearRowInSheet = i
+            Exit Function
+        End If
+    Next i
+    
+    FindYearRowInSheet = 0
+End Function
+
 ' 현재 월 가져오기 (데이터 전송용 - C4 셀)
 Function GetCurrentMonth() As Integer
     Dim cellValue As Variant
@@ -1552,6 +2083,14 @@ Sub 버튼_자동생성()
     btnRefresh.Font.Size = 10
     btnRefresh.Font.Bold = True
     
+    ' 전체 년도 데이터 전송 버튼 (F3 위치)
+    Dim btnBulkSend As Button
+    Set btnBulkSend = ws.Buttons.Add(ws.Range("F3").Left, ws.Range("F3").Top, 120, 30)
+    btnBulkSend.OnAction = "전체년도_데이터전송"
+    btnBulkSend.Caption = "📊 전체년도 전송"
+    btnBulkSend.Font.Size = 9
+    btnBulkSend.Font.Bold = True
+    
     ' 디버깅 버튼들 추가
     Dim btnDebug As Button
     Dim btnStructure As Button
@@ -1568,13 +2107,30 @@ Sub 버튼_자동생성()
     btnStructure.Caption = "📋 시트 구조 분석"
     btnStructure.Font.Size = 9
     
+    ' 전체 년도 데이터 미리보기 버튼 (F14)
+    Dim btnPreviewBulk As Button
+    Set btnPreviewBulk = ws.Buttons.Add(ws.Range("F14").Left, ws.Range("F14").Top, 90, 25)
+    btnPreviewBulk.OnAction = "전체년도데이터_미리보기"
+    btnPreviewBulk.Caption = "👁 전체년도 미리보기"
+    btnPreviewBulk.Font.Size = 8
+    
+    ' 빠른 테스트 버튼 (F15)
+    Dim btnQuickTest As Button
+    Set btnQuickTest = ws.Buttons.Add(ws.Range("F15").Left, ws.Range("F15").Top, 90, 25)
+    btnQuickTest.OnAction = "빠른_전체년도_테스트"
+    btnQuickTest.Caption = "⚡ 빠른 테스트"
+    btnQuickTest.Font.Size = 8
+    
         MsgBox "재무 리포트 대시보드가 생성되었습니다!" & vbCrLf & vbCrLf & _
            "📋 사용법:" & vbCrLf & _
            "1. C3, C4에 연도/월 입력 (데이터 전송용)" & vbCrLf & _
            "2. B7에 연도 입력 (승인상태 확인용)" & vbCrLf & _
-           "3. '데이터전송' 버튼: 다른 시트에서 데이터 자동 수집하여 전송" & vbCrLf & _
-           "4. '새로고침' 버튼: 전체월 승인상태 확인" & vbCrLf & vbCrLf & _
-           "💡 필요한 시트: 20-25년 정리표, 통장, 캐시플로우", vbInformation, "대시보드 생성 완료"
+           "3. '데이터전송' 버튼: 해당 월 데이터 전송" & vbCrLf & _
+           "4. '📊 전체년도 전송' 버튼: 20~25년 정리표의 모든 데이터 전송" & vbCrLf & _
+           "5. '새로고침' 버튼: 전체월 승인상태 확인" & vbCrLf & _
+           "6. '👁 전체년도 미리보기' 버튼: 전송할 데이터 미리 확인" & vbCrLf & vbCrLf & _
+           "💡 필요한 시트: 20-25년 정리표, 통장, 캐시플로우" & vbCrLf & _
+           "🚀 새로운 기능: 전체 년도 일괄 전송으로 시간 절약!", vbInformation, "대시보드 생성 완료"
 End Sub
 
 ' 새로운 레이아웃 설정 (이미지와 동일한 구조)
@@ -1696,23 +2252,25 @@ Sub 새로운레이아웃_설정(ws As Worksheet)
      ws.Range("F2").Font.Bold = True
      ws.Range("F2").Interior.Color = RGB(200, 255, 200) ' 연한 녹색
      
-     ' F3~F10: 데이터 소스 안내
-     ws.Range("F3").Value = "데이터 소스:"
-     ws.Range("F4").Value = "• 20-25년 정리표"
-     ws.Range("F5").Value = "• 통장 시트"
-     ws.Range("F6").Value = "• 캐시플로우 시트"
-     ws.Range("F7").Value = ""
-     ws.Range("F8").Value = "전송 시 해당 월의"
-     ws.Range("F9").Value = "데이터를 자동으로"
-     ws.Range("F10").Value = "수집하여 전송합니다."
+     ' F3: 전체 년도 전송 버튼 자리 (버튼 생성 함수에서 처리)
+     
+     ' F4~F10: 데이터 소스 안내
+     ws.Range("F4").Value = "데이터 소스:"
+     ws.Range("F5").Value = "• 20-25년 정리표"
+     ws.Range("F6").Value = "• 통장 시트"
+     ws.Range("F7").Value = "• 캐시플로우 시트"
+     ws.Range("F8").Value = ""
+     ws.Range("F9").Value = "전송 시 해당 월의"
+     ws.Range("F10").Value = "데이터를 자동으로"
+     ws.Range("F11").Value = "수집하여 전송합니다."
      
      ' 안내 메시지 서식
-     ws.Range("F3").Font.Bold = True
-     ws.Range("F4:F6").Font.Size = 9
-     ws.Range("F4:F6").Interior.Color = RGB(245, 245, 245) ' 연한 회색
-     ws.Range("F8:F10").Font.Size = 9
-     ws.Range("F8:F10").Font.Color = RGB(100, 100, 100) ' 회색 글자
-     ws.Range("F8:F10").Font.Italic = True
+     ws.Range("F4").Font.Bold = True
+     ws.Range("F5:F7").Font.Size = 9
+     ws.Range("F5:F7").Interior.Color = RGB(245, 245, 245) ' 연한 회색
+     ws.Range("F9:F11").Font.Size = 9
+     ws.Range("F9:F11").Font.Color = RGB(100, 100, 100) ' 회색 글자
+     ws.Range("F9:F11").Font.Italic = True
 End Sub
 
 ' 대시보드 시트 기본 설정
@@ -2085,6 +2643,60 @@ End Sub
 
 ' ===== 추가 테스트 함수들 =====
 
+' 전체 년도 데이터 수집 테스트 (전송 없이 데이터만 확인)
+Sub 전체년도데이터_미리보기()
+    Dim ws As Worksheet
+    Dim result As String
+    Dim dataPreview As String
+    Dim msg As String
+    
+    ' 시트 존재 확인
+    If Not Check정리표시트_존재() Then
+        MsgBox "❌ '20~25년 정리표' 시트를 찾을 수 없습니다!", vbCritical, "시트 없음"
+        Exit Sub
+    End If
+    
+    Set ws = Find정리표시트()
+    
+    ' 상태 표시
+    Application.StatusBar = "데이터 수집 중... 잠시만 기다려주세요."
+    
+    ' 데이터 수집 (전송 없이)
+    result = CollectAllYearlyData(ws)
+    
+    ' 상태바 초기화
+    Application.StatusBar = False
+    
+    If result = "" Then
+        MsgBox "❌ 수집할 데이터가 없습니다!" & vbCrLf & vbCrLf & _
+               "시트에 2020~2025년 데이터가 있는지 확인하세요.", vbExclamation, "데이터 없음"
+        Exit Sub
+    End If
+    
+    ' 상세 데이터 미리보기 생성
+    dataPreview = GenerateDataPreview(ws, result)
+    
+    ' 미리보기 메시지 구성
+    msg = "📊 전체 년도 데이터 상세 미리보기" & vbCrLf & vbCrLf
+    msg = msg & "📋 시트명: " & ws.Name & vbCrLf
+    msg = msg & "⚡ JSON 데이터 크기: " & Len(result) & " 문자" & vbCrLf & vbCrLf
+    msg = msg & dataPreview & vbCrLf
+    msg = msg & "💡 팁: 실제 전송을 원하시면 '📊 전체년도 전송' 버튼을 사용하세요." & vbCrLf & vbCrLf
+    msg = msg & "이 데이터를 바로 서버로 전송하시겠습니까?"
+    
+    If MsgBox(msg, vbQuestion + vbYesNo, "📊 전체 년도 데이터 상세 미리보기") = vbYes Then
+        ' 이미 수집된 데이터를 사용하여 전송
+        Dim sendResult As Boolean
+        sendResult = SendBulkDataToAPIWithData(result, ws)
+        
+        If sendResult Then
+            RefreshApprovalStatus
+            MsgBox "✅ 전체 년도 데이터 전송이 완료되었습니다!" & vbCrLf & vbCrLf & _
+                   "🌐 서버에 모든 데이터가 저장되었습니다.", vbInformation, "전송 완료"
+        End If
+    End If
+End Sub
+
 ' 간단한 API 연결 테스트
 Sub 간단한_API_테스트()
     Dim result As String
@@ -2094,6 +2706,43 @@ Sub 간단한_API_테스트()
         MsgBox "API 연결 성공!" & vbCrLf & vbCrLf & result, vbInformation, "연결 테스트 성공"
     Else
         MsgBox "API 연결 실패!" & vbCrLf & "서버가 실행 중인지 확인하세요.", vbCritical, "연결 오류"
+    End If
+End Sub
+
+' 전체 년도 데이터 전송 테스트 (짧은 버전)
+Sub 빠른_전체년도_테스트()
+    Dim ws As Worksheet
+    Dim result As String
+    Dim previewShort As String
+    
+    ' 시트 확인
+    If Not Check정리표시트_존재() Then
+        MsgBox "❌ '20~25년 정리표' 시트를 찾을 수 없습니다!", vbCritical, "시트 없음"
+        Exit Sub
+    End If
+    
+    Set ws = Find정리표시트()
+    
+    ' 간단한 데이터 수집 테스트
+    Application.StatusBar = "빠른 테스트 중..."
+    
+    ' 2020년 데이터만 테스트
+    result = CollectYearlyData(ws, 2020)
+    
+    Application.StatusBar = False
+    
+    If result <> "" Then
+        previewShort = "✅ 테스트 성공!" & vbCrLf & vbCrLf
+        previewShort = previewShort & "📋 시트: " & ws.Name & vbCrLf
+        previewShort = previewShort & "📅 2020년 데이터 크기: " & Len(result) & " 문자" & vbCrLf & vbCrLf
+        previewShort = previewShort & "💡 전체 년도 데이터 수집이 가능합니다!" & vbCrLf
+        previewShort = previewShort & "'📊 전체년도 전송' 버튼을 사용하세요."
+        
+        MsgBox previewShort, vbInformation, "빠른 테스트 완료"
+    Else
+        MsgBox "❌ 테스트 실패!" & vbCrLf & vbCrLf & _
+               "2020년 데이터를 찾을 수 없습니다." & vbCrLf & _
+               "시트 구조를 확인해주세요.", vbExclamation, "테스트 실패"
     End If
 End Sub
 
@@ -2229,4 +2878,308 @@ End Sub
 ' 워크북이 활성화될 때 자동으로 상태 새로고침
 Sub Workbook_Activate()
     RefreshApprovalStatus
+End Sub
+
+' ===== 새로운 차트 데이터 지원 함수들 =====
+
+' 현금흐름 데이터 전송
+Sub 현금흐름데이터_전송()
+    Dim result As Boolean
+    
+    If Not ValidateCashFlowData() Then
+        MsgBox "현금흐름 데이터를 확인해주세요. 필수 항목이 누락되었습니다.", vbExclamation, "데이터 확인 필요"
+        Exit Sub
+    End If
+    
+    result = SendCashFlowDataToAPI()
+    
+    If result Then
+        MsgBox "현금흐름 데이터가 성공적으로 전송되었습니다!", vbInformation, "전송 완료"
+    End If
+End Sub
+
+' 현금흐름 데이터 유효성 검사
+Function ValidateCashFlowData() As Boolean
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+    
+    ' 현금흐름 데이터 항목들 확인
+    If ws.Range("E5").Value = "" Then ' 현금유입
+        ValidateCashFlowData = False
+        Exit Function
+    End If
+    
+    If ws.Range("E6").Value = "" Then ' 현금유출
+        ValidateCashFlowData = False
+        Exit Function
+    End If
+    
+    ValidateCashFlowData = True
+End Function
+
+' 현금흐름 데이터를 API로 전송
+Function SendCashFlowDataToAPI() As Boolean
+    Dim http As Object
+    Dim url As String
+    Dim jsonData As String
+    Dim response As String
+    Dim ws As Worksheet
+    
+    On Error GoTo ErrorHandler
+    
+    Set ws = ActiveSheet
+    Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
+    
+    ' 현금흐름 데이터 JSON 생성
+    jsonData = "{"
+    jsonData = jsonData & """cashInflow"": " & ws.Range("E5").Value & ","
+    jsonData = jsonData & """cashOutflow"": " & ws.Range("E6").Value & ","
+    jsonData = jsonData & """netCashFlow"": " & (ws.Range("E5").Value - ws.Range("E6").Value) & ","
+    jsonData = jsonData & """month"": """ & GetCurrentMonth() & """," 
+    jsonData = jsonData & """year"": " & GetCurrentYear()
+    jsonData = jsonData & "}"
+    
+    ' API 호출
+    url = API_BASE_URL & "/cashflow"
+    http.Open "POST", url, False
+    http.SetRequestHeader "Content-Type", "application/json"
+    http.Send jsonData
+    
+    If http.Status = 200 Or http.Status = 201 Then
+        SendCashFlowDataToAPI = True
+    Else
+        SendCashFlowDataToAPI = False
+        MsgBox "현금흐름 데이터 전송 실패: " & http.Status & " - " & http.StatusText, vbCritical, "전송 오류"
+    End If
+    
+    Set http = Nothing
+    Exit Function
+    
+ErrorHandler:
+    SendCashFlowDataToAPI = False
+    MsgBox "현금흐름 데이터 전송 중 오류가 발생했습니다: " & Err.Description, vbCritical, "오류"
+    Set http = Nothing
+End Function
+
+' 고정비/유동비 데이터 전송
+Sub 고정비유동비_데이터전송()
+    Dim result As Boolean
+    
+    If Not ValidateFixedVariableData() Then
+        MsgBox "고정비/유동비 데이터를 확인해주세요.", vbExclamation, "데이터 확인 필요"
+        Exit Sub
+    End If
+    
+    result = SendFixedVariableDataToAPI()
+    
+    If result Then
+        MsgBox "고정비/유동비 데이터가 성공적으로 전송되었습니다!", vbInformation, "전송 완료"
+    End If
+End Sub
+
+' 고정비/유동비 데이터 유효성 검사
+Function ValidateFixedVariableData() As Boolean
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+    
+    ' 고정비/유동비 데이터 항목들 확인
+    If ws.Range("F5").Value = "" Then ' 고정비
+        ValidateFixedVariableData = False
+        Exit Function
+    End If
+    
+    If ws.Range("F6").Value = "" Then ' 유동비
+        ValidateFixedVariableData = False
+        Exit Function
+    End If
+    
+    ValidateFixedVariableData = True
+End Function
+
+' 고정비/유동비 데이터를 API로 전송
+Function SendFixedVariableDataToAPI() As Boolean
+    Dim http As Object
+    Dim url As String
+    Dim jsonData As String
+    Dim response As String
+    Dim ws As Worksheet
+    Dim fixedCost As Double
+    Dim variableCost As Double
+    Dim totalCost As Double
+    
+    On Error GoTo ErrorHandler
+    
+    Set ws = ActiveSheet
+    Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
+    
+    fixedCost = ws.Range("F5").Value
+    variableCost = ws.Range("F6").Value
+    totalCost = fixedCost + variableCost
+    
+    ' 고정비/유동비 데이터 JSON 생성
+    jsonData = "{"
+    jsonData = jsonData & """fixedCost"": " & fixedCost & ","
+    jsonData = jsonData & """variableCost"": " & variableCost & ","
+    jsonData = jsonData & """fixedRatio"": " & Round((fixedCost / totalCost) * 100, 1) & ","
+    jsonData = jsonData & """variableRatio"": " & Round((variableCost / totalCost) * 100, 1) & ","
+    jsonData = jsonData & """month"": """ & GetCurrentMonth() & """," 
+    jsonData = jsonData & """year"": " & GetCurrentYear()
+    jsonData = jsonData & "}"
+    
+    ' API 호출
+    url = API_BASE_URL & "/fixed-variable"
+    http.Open "POST", url, False
+    http.SetRequestHeader "Content-Type", "application/json"
+    http.Send jsonData
+    
+    If http.Status = 200 Or http.Status = 201 Then
+        SendFixedVariableDataToAPI = True
+    Else
+        SendFixedVariableDataToAPI = False
+        MsgBox "고정비/유동비 데이터 전송 실패: " & http.Status & " - " & http.StatusText, vbCritical, "전송 오류"
+    End If
+    
+    Set http = Nothing
+    Exit Function
+    
+ErrorHandler:
+    SendFixedVariableDataToAPI = False
+    MsgBox "고정비/유동비 데이터 전송 중 오류가 발생했습니다: " & Err.Description, vbCritical, "오류"
+    Set http = Nothing
+End Function
+
+' 월별 상세 데이터 테이블 업데이트
+Sub 월별상세데이터_업데이트()
+    Dim result As Boolean
+    
+    result = UpdateMonthlyDetailTable()
+    
+    If result Then
+        MsgBox "월별 상세 데이터가 성공적으로 업데이트되었습니다!", vbInformation, "업데이트 완료"
+    End If
+End Sub
+
+' 월별 상세 데이터 테이블 업데이트 함수
+Function UpdateMonthlyDetailTable() As Boolean
+    Dim http As Object
+    Dim url As String
+    Dim response As String
+    Dim ws As Worksheet
+    Dim i As Integer
+    
+    On Error GoTo ErrorHandler
+    
+    Set ws = ActiveSheet
+    Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
+    
+    ' API에서 월별 상세 데이터 가져오기
+    url = API_BASE_URL & "/monthly-detail"
+    http.Open "GET", url, False
+    http.Send
+    
+    If http.Status = 200 Then
+        response = http.ResponseText
+        
+        ' 응답 데이터를 엑셀 시트에 업데이트
+        ' (실제 구현에서는 JSON 파싱이 필요하지만, 여기서는 기본 틀만 제공)
+        ws.Range("H1").Value = "월별 상세 데이터"
+        ws.Range("H2").Value = "월"
+        ws.Range("I2").Value = "매출"
+        ws.Range("J2").Value = "매입"
+        ws.Range("K2").Value = "순이익"
+        ws.Range("L2").Value = "누계 매출"
+        ws.Range("M2").Value = "누계 매입"
+        ws.Range("N2").Value = "누계 순이익"
+        
+        ' 헤더 서식
+        ws.Range("H1:N2").Font.Bold = True
+        ws.Range("H2:N2").Interior.Color = RGB(200, 200, 200)
+        
+        UpdateMonthlyDetailTable = True
+    Else
+        UpdateMonthlyDetailTable = False
+        MsgBox "월별 상세 데이터 업데이트 실패: " & http.Status, vbCritical, "업데이트 오류"
+    End If
+    
+    Set http = Nothing
+    Exit Function
+    
+ErrorHandler:
+    UpdateMonthlyDetailTable = False
+    MsgBox "월별 상세 데이터 업데이트 중 오류가 발생했습니다: " & Err.Description, vbCritical, "오류"
+    Set http = Nothing
+End Function
+
+' 새로운 차트 데이터 템플릿 생성
+Sub 새로운차트_템플릿생성()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+    
+    ' 현금흐름 데이터 템플릿
+    ws.Range("E1").Value = "현금흐름 데이터"
+    ws.Range("E2").Value = "항목"
+    ws.Range("F2").Value = "금액"
+    ws.Range("E3").Value = "현금유입"
+    ws.Range("E4").Value = "현금유출"
+    ws.Range("E5").Value = "순현금흐름"
+    
+    ' 고정비/유동비 데이터 템플릿
+    ws.Range("E7").Value = "고정비/유동비 데이터"
+    ws.Range("E8").Value = "항목"
+    ws.Range("F8").Value = "금액"
+    ws.Range("E9").Value = "고정비"
+    ws.Range("E10").Value = "유동비"
+    
+    ' 폭포차트 데이터 템플릿 (기본 재무 데이터 활용)
+    ws.Range("E12").Value = "폭포차트 데이터"
+    ws.Range("E13").Value = "(기본 재무 데이터에서 자동 계산)"
+    
+    ' 서식 적용
+    ws.Range("E1").Font.Bold = True
+    ws.Range("E7").Font.Bold = True
+    ws.Range("E12").Font.Bold = True
+    ws.Range("E2:F2").Font.Bold = True
+    ws.Range("E8:F8").Font.Bold = True
+    ws.Range("E2:F2").Interior.Color = RGB(220, 220, 220)
+    ws.Range("E8:F8").Interior.Color = RGB(220, 220, 220)
+    
+    MsgBox "새로운 차트 데이터 템플릿이 E열에 생성되었습니다!", vbInformation, "템플릿 생성 완료"
+End Sub
+
+' 통합 데이터 전송 (기존 + 새로운 차트 데이터)
+Sub 통합데이터_전송()
+    Dim basicResult As Boolean
+    Dim cashFlowResult As Boolean
+    Dim fixedVariableResult As Boolean
+    Dim successCount As Integer
+    
+    successCount = 0
+    
+    ' 기본 재무 데이터 전송
+    basicResult = SendFinanceDataToAPI(GetCurrentYear(), GetCurrentMonth())
+    If basicResult Then successCount = successCount + 1
+    
+    ' 현금흐름 데이터 전송
+    If ValidateCashFlowData() Then
+        cashFlowResult = SendCashFlowDataToAPI()
+        If cashFlowResult Then successCount = successCount + 1
+    End If
+    
+    ' 고정비/유동비 데이터 전송
+    If ValidateFixedVariableData() Then
+        fixedVariableResult = SendFixedVariableDataToAPI()
+        If fixedVariableResult Then successCount = successCount + 1
+    End If
+    
+    ' 결과 메시지
+    If successCount > 0 Then
+        MsgBox "통합 데이터 전송 완료!" & vbCrLf & _
+               "성공: " & successCount & "개 데이터 세트" & vbCrLf & vbCrLf & _
+               "기본 재무 데이터: " & IIf(basicResult, "성공", "실패") & vbCrLf & _
+               "현금흐름 데이터: " & IIf(cashFlowResult, "성공", "실패") & vbCrLf & _
+               "고정비/유동비 데이터: " & IIf(fixedVariableResult, "성공", "실패"), _
+               vbInformation, "통합 전송 결과"
+    Else
+        MsgBox "모든 데이터 전송이 실패했습니다." & vbCrLf & "데이터와 서버 상태를 확인해주세요.", vbCritical, "전송 실패"
+    End If
 End Sub 

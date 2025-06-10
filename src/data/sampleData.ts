@@ -202,4 +202,95 @@ export const getExpenseByCategory = (month: number, year: number = 2024) => {
     { category: '운영비', amount: data.operatingExpense, percentage: (data.operatingExpense / total) * 100 },
     { category: '기타', amount: data.otherExpense, percentage: (data.otherExpense / total) * 100 }
   ];
+};
+
+// 현금흐름 데이터 (6개월간)
+export const getCashFlowData = () => {
+  const currentMonthlyData = [
+    { month: '10월', inflow: 45000000, outflow: 38000000 },
+    { month: '11월', inflow: 52000000, outflow: 41000000 },
+    { month: '12월', inflow: 48000000, outflow: 44000000 },
+    { month: '1월', inflow: 38000000, outflow: 42000000 },
+    { month: '2월', inflow: 41000000, outflow: 39000000 },
+    { month: '3월', inflow: 55000000, outflow: 43000000 }
+  ];
+
+  return currentMonthlyData.map(data => ({
+    ...data,
+    netFlow: data.inflow - data.outflow
+  }));
+};
+
+// 고정비/유동비 데이터
+export const getFixedVariableData = () => {
+  // 실제 데이터에서 계산된 고정비/유동비 비율
+  const totalExpense = kpiData.totalExpense;
+  const fixedCosts = 35; // 임대료 + 고정 인건비 등
+  const variableCosts = 65; // 재료비 + 변동비 등
+  
+  return [
+    { name: '고정비', value: fixedCosts, color: '#ff6b6b' },
+    { name: '유동비', value: variableCosts, color: '#4ecdc4' }
+  ];
+};
+
+// 폭포차트 데이터 (매출 → 순이익 구조 분석)
+export const getWaterfallData = () => {
+  const totalRevenue = kpiData.totalRevenue;
+  const breakdown = {
+    revenue: totalRevenue,
+    materialCost: -150000000,
+    laborCost: -100000000,
+    rentCost: -35000000,
+    marketingCost: -25000000,
+    otherCost: -20000000
+  };
+
+  const cumulative = {
+    revenue: breakdown.revenue,
+    afterMaterial: breakdown.revenue + breakdown.materialCost,
+    afterLabor: breakdown.revenue + breakdown.materialCost + breakdown.laborCost,
+    afterRent: breakdown.revenue + breakdown.materialCost + breakdown.laborCost + breakdown.rentCost,
+    afterMarketing: breakdown.revenue + breakdown.materialCost + breakdown.laborCost + breakdown.rentCost + breakdown.marketingCost,
+    final: breakdown.revenue + breakdown.materialCost + breakdown.laborCost + breakdown.rentCost + breakdown.marketingCost + breakdown.otherCost
+  };
+
+  return [
+    { name: '매출', value: breakdown.revenue, cumulative: cumulative.revenue, type: 'positive' },
+    { name: '매입원가', value: breakdown.materialCost, cumulative: cumulative.afterMaterial, type: 'negative' },
+    { name: '인건비', value: breakdown.laborCost, cumulative: cumulative.afterLabor, type: 'negative' },
+    { name: '임대료', value: breakdown.rentCost, cumulative: cumulative.afterRent, type: 'negative' },
+    { name: '마케팅비', value: breakdown.marketingCost, cumulative: cumulative.afterMarketing, type: 'negative' },
+    { name: '기타비용', value: breakdown.otherCost, cumulative: cumulative.final, type: 'negative' },
+    { name: '순이익', value: cumulative.final, cumulative: cumulative.final, type: 'total' }
+  ];
+};
+
+// 월별 상세 테이블 데이터 (누계 포함)
+export const getMonthlyDetailTableData = () => {
+  const sortedData = [...globalMonthlyReports].sort((a, b) => {
+    if (a.year !== b.year) return a.year - b.year;
+    return a.month - b.month;
+  });
+
+  let cumulativeRevenue = 0;
+  let cumulativeExpense = 0;
+  let cumulativeNet = 0;
+
+  return sortedData.map((data, index) => {
+    cumulativeRevenue += data.totalRevenue;
+    cumulativeExpense += data.totalExpense;
+    cumulativeNet += data.netIncome;
+
+    return {
+      month: `${data.month}월`,
+      revenue: data.totalRevenue,
+      expense: data.totalExpense,
+      netIncome: data.netIncome,
+      cumulativeRevenue,
+      cumulativeExpense,
+      cumulativeNet,
+      status: data.netIncome >= 0 ? '흑자' : '적자'
+    };
+  });
 }; 

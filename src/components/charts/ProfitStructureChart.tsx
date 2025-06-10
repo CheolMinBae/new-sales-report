@@ -11,21 +11,19 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { Box, Typography, useTheme } from '@mui/material';
-import { monthlyData } from '@/data/sampleData';
 
-export default function ProfitStructureChart() {
+interface ProfitStructureChartProps {
+  data?: any[];
+}
+
+export default function ProfitStructureChart({ data = [] }: ProfitStructureChartProps) {
   const theme = useTheme();
   
   // 데이터를 수익 구조 분석에 맞게 변환
-  const data = monthlyData.map(item => ({
-    period: `${item.year}-${item.month < 10 ? '0' + item.month : item.month}`,
-    총매출: item.totalRevenue,
-    임대료: -item.rentExpense,
-    인건비: -item.laborExpense,
-    재료비: -item.materialExpense,
-    운영비: -item.operatingExpense,
-    기타비용: -item.otherExpense,
-    순이익: item.netIncome
+  const chartData = data.map(item => ({
+    month: item.month,
+    profit: item.profit || 0,
+    loss: item.loss || 0
   }));
 
   const formatCurrency = (value: number) => {
@@ -75,7 +73,7 @@ export default function ProfitStructureChart() {
     <Box sx={{ width: '100%', height: 350 }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
-          data={data}
+          data={chartData}
           margin={{
             top: 20,
             right: 30,
@@ -86,7 +84,7 @@ export default function ProfitStructureChart() {
         >
           <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
           <XAxis 
-            dataKey="period" 
+            dataKey="month" 
             tick={{ fontSize: 12 }}
             stroke={theme.palette.text.secondary}
           />
@@ -100,50 +98,18 @@ export default function ProfitStructureChart() {
           
           {/* 수익 */}
           <Bar 
-            dataKey="총매출" 
-            stackId="profit"
-            fill={theme.palette.primary.main}
-            name="총매출"
-          />
-          
-          {/* 비용들 */}
-          <Bar 
-            dataKey="임대료" 
-            stackId="cost"
-            fill="#FF6B6B"
-            name="임대료"
-          />
-          <Bar 
-            dataKey="인건비" 
-            stackId="cost"
-            fill="#4ECDC4"
-            name="인건비"
-          />
-          <Bar 
-            dataKey="재료비" 
-            stackId="cost"
-            fill="#45B7D1"
-            name="재료비"
-          />
-          <Bar 
-            dataKey="운영비" 
-            stackId="cost"
-            fill="#FFA07A"
-            name="운영비"
-          />
-          <Bar 
-            dataKey="기타비용" 
-            stackId="cost"
-            fill="#DDA0DD"
-            name="기타비용"
-          />
-          
-          {/* 순이익 */}
-          <Bar 
-            dataKey="순이익" 
+            dataKey="profit" 
             stackId="result"
             fill={theme.palette.success.main}
-            name="순이익"
+            name="수익"
+          />
+          
+          {/* 손실 */}
+          <Bar 
+            dataKey="loss" 
+            stackId="result"
+            fill={theme.palette.error.main}
+            name="손실"
           />
         </BarChart>
       </ResponsiveContainer>

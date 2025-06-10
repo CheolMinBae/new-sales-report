@@ -10,11 +10,12 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { Box, Typography, useTheme } from '@mui/material';
-import { getChartData } from '@/data/sampleData';
+interface MonthlyStatsChartProps {
+  data?: any[];
+}
 
-export default function MonthlyStatsChart() {
+export default function MonthlyStatsChart({ data = [] }: MonthlyStatsChartProps) {
   const theme = useTheme();
-  const data = getChartData();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ko-KR', {

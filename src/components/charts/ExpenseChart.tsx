@@ -9,7 +9,6 @@ import {
   Legend
 } from 'recharts';
 import { Box, Typography, useTheme } from '@mui/material';
-import { getExpenseByCategory } from '@/data/sampleData';
 
 const COLORS = [
   '#0088FE', // 임대료
@@ -19,9 +18,12 @@ const COLORS = [
   '#8884D8'  // 기타
 ];
 
-export default function ExpenseChart() {
+interface ExpenseChartProps {
+  data?: any[];
+}
+
+export default function ExpenseChart({ data = [] }: ExpenseChartProps) {
   const theme = useTheme();
-  const data = getExpenseByCategory(3, 2024); // 3월 데이터
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ko-KR', {

@@ -12,11 +12,13 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { Box, Typography, useTheme } from '@mui/material';
-import { getChartData } from '@/data/sampleData';
 
-export default function RevenueChart() {
+interface RevenueChartProps {
+  data?: any[];
+}
+
+export default function RevenueChart({ data = [] }: RevenueChartProps) {
   const theme = useTheme();
-  const data = getChartData();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ko-KR', {

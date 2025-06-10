@@ -1,0 +1,66 @@
+{
+  "yearlyData": [
+    {
+      "year": 2024,
+      "monthlyData": {
+        "1월": {
+          "salesRevenue": 50000000,
+          "otherIncome": 5000000,
+          "rentExpense": 10000000,
+          "laborExpense": 15000000,
+          "materialExpense": 8000000,
+          "operatingExpense": 12000000,
+          "otherExpense": 3000000,
+          "cashBalance": 20000000
+        },
+        "2월": {
+          "salesRevenue": 55000000,
+          "otherIncome": 4000000,
+          "rentExpense": 10000000,
+          "laborExpense": 16000000,
+          "materialExpense": 9000000,
+          "operatingExpense": 11000000,
+          "otherExpense": 2000000,
+          "cashBalance": 25000000
+        },
+        "3월": {
+          "salesRevenue": 60000000,
+          "otherIncome": 6000000,
+          "rentExpense": 10000000,
+          "laborExpense": 17000000,
+          "materialExpense": 10000000,
+          "operatingExpense": 13000000,
+          "otherExpense": 4000000,
+          "cashBalance": 30000000
+        }
+      }
+    },
+    {
+      "year": 2025,
+      "monthlyData": {
+        "1월": {
+          "salesRevenue": 65000000,
+          "otherIncome": 7000000,
+          "rentExpense": 11000000,
+          "laborExpense": 18000000,
+          "materialExpense": 11000000,
+          "operatingExpense": 14000000,
+          "otherExpense": 5000000,
+          "cashBalance": 35000000
+        },
+        "2월": {
+          "salesRevenue": 70000000,
+          "otherIncome": 8000000,
+          "rentExpense": 11000000,
+          "laborExpense": 19000000,
+          "materialExpense": 12000000,
+          "operatingExpense": 15000000,
+          "otherExpense": 6000000,
+          "cashBalance": 40000000
+        }
+      }
+    }
+  ],
+  "submittedBy": "VBA_TestUser",
+  "sheetName": "20~25년_정리표"
+} 

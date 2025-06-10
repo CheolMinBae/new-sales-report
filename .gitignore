@@ -83,6 +83,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# 데이터 파일들 (개발용)
+/data
+
 # Python (만약 파이썬 스크립트가 있다면)
 __pycache__/
 *.py[cod]

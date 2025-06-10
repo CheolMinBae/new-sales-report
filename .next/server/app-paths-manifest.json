@@ -1,9 +1,7 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
   "/page": "app/page.js",
-  "/api/reports/route": "app/api/reports/route.js",
-  "/api/reports/[month]/route": "app/api/reports/[month]/route.js",
-  "/api-test/page": "app/api-test/page.js",
-  "/api/reports/submit/route": "app/api/reports/submit/route.js",
-  "/api/excel/route": "app/api/excel/route.js"
+  "/test-bulk/page": "app/test-bulk/page.js",
+  "/api/bulk-data/submit/route": "app/api/bulk-data/submit/route.js",
+  "/api/excel/route": "app/api/excel/route.js",
+  "/api/dashboard/route": "app/api/dashboard/route.js"
 }

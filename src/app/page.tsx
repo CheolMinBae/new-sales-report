@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -24,7 +24,8 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  CircularProgress
 } from '@mui/material';
 import {
   Dashboard,
@@ -34,12 +35,15 @@ import {
   AttachMoney,
   AccountBalance
 } from '@mui/icons-material';
-import { kpiData } from '@/data/sampleData';
 import RevenueChart from '@/components/charts/RevenueChart';
 import ExpenseChart from '@/components/charts/ExpenseChart';
 import MonthlyStatsChart from '@/components/charts/MonthlyStatsChart';
 import ProfitStructureChart from '@/components/charts/ProfitStructureChart';
 import WeeklySalesChart from '@/components/charts/WeeklySalesChart';
+import CashFlowChart from '@/components/charts/CashFlowChart';
+import FixedVariableGauge from '@/components/charts/FixedVariableGauge';
+import WaterfallChart from '@/components/charts/WaterfallChart';
+import MonthlyDetailTable from '@/components/MonthlyDetailTable';
 import MonthlyReportManagement from '@/components/MonthlyReportManagement';
 
 const theme = createTheme({
@@ -101,9 +105,26 @@ function KPICard({ title, value, change, icon, color }: KPICardProps) {
   );
 }
 
+interface DashboardData {
+  year: number;
+  kpi: {
+    totalRevenue: number;
+    totalExpense: number;
+    totalNetIncome: number;
+    avgProfitMargin: number;
+    currentCashBalance: number;
+  };
+  chartData: any;
+  expenseData: any[];
+  weeklySalesData: any[];
+  monthlyReports: any[];
+}
+
 export default function FinanceDashboard() {
   const [selectedMenu, setSelectedMenu] = useState('dashboard');
   const [selectedYear, setSelectedYear] = useState(2024);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ko-KR', {
@@ -113,6 +134,39 @@ export default function FinanceDashboard() {
       maximumFractionDigits: 0
     }).format(amount);
   };
+
+  // API에서 대시보드 데이터 가져오기
+  const fetchDashboardData = async (year: number) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/dashboard?year=${year}`);
+      const result = await response.json();
+      
+      if (result.success) {
+        setDashboardData(result.data);
+      } else {
+        console.error('대시보드 데이터 로드 실패:', result.error);
+      }
+    } catch (error) {
+      console.error('API 호출 오류:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 년도 변경 시 데이터 다시 로드
+  useEffect(() => {
+    if (selectedMenu === 'dashboard') {
+      fetchDashboardData(selectedYear);
+    }
+  }, [selectedYear, selectedMenu]);
+
+  // 초기 로드
+  useEffect(() => {
+    if (selectedMenu === 'dashboard') {
+      fetchDashboardData(selectedYear);
+    }
+  }, []);
 
   const menuItems = [
     { id: 'dashboard', label: '전체 누적 대시보드', icon: <Dashboard /> },
@@ -210,55 +264,65 @@ export default function FinanceDashboard() {
                 </Grid>
               </Grid>
               
+              {/* Loading Indicator */}
+              {loading && (
+                <Box display="flex" justifyContent="center" my={4}>
+                  <CircularProgress />
+                </Box>
+              )}
+
               {/* KPI Cards */}
-              <Grid container spacing={3} mb={4}>
-                <Grid item xs={12} sm={6} md={3}>
-                  <KPICard
-                    title="총 매출"
-                    value={formatCurrency(kpiData.totalRevenue)}
-                    change={kpiData.revenueChange}
-                    icon={<AttachMoney fontSize="large" />}
-                    color="primary"
-                  />
+              {dashboardData && !loading && (
+                <Grid container spacing={3} mb={4}>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <KPICard
+                      title="총 매출"
+                      value={formatCurrency(dashboardData.kpi.totalRevenue)}
+                      change={5.2} // 임시 값 (나중에 이전 년도 대비 계산 로직 추가)
+                      icon={<AttachMoney fontSize="large" />}
+                      color="primary"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <KPICard
+                      title="총 매입"
+                      value={formatCurrency(dashboardData.kpi.totalExpense)}
+                      change={-2.1} // 임시 값
+                      icon={<Receipt fontSize="large" />}
+                      color="secondary"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <KPICard
+                      title="현금 잔고"
+                      value={formatCurrency(dashboardData.kpi.currentCashBalance)}
+                      change={8.7} // 임시 값
+                      icon={<AccountBalance fontSize="large" />}
+                      color="success"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <KPICard
+                      title="순이익률"
+                      value={`${dashboardData.kpi.avgProfitMargin.toFixed(1)}%`}
+                      change={1.5} // 임시 값
+                      icon={<TrendingUp fontSize="large" />}
+                      color="warning"
+                    />
+                  </Grid>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <KPICard
-                    title="총 매입"
-                    value={formatCurrency(kpiData.totalExpense)}
-                    change={kpiData.expenseChange}
-                    icon={<Receipt fontSize="large" />}
-                    color="secondary"
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <KPICard
-                    title="현금 잔고"
-                    value={formatCurrency(kpiData.currentCashBalance)}
-                    change={kpiData.cashBalanceChange}
-                    icon={<AccountBalance fontSize="large" />}
-                    color="success"
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <KPICard
-                    title="순이익률"
-                    value={`${kpiData.profitMargin.toFixed(1)}%`}
-                    change={kpiData.profitMarginChange}
-                    icon={<TrendingUp fontSize="large" />}
-                    color="warning"
-                  />
-                </Grid>
-              </Grid>
+              )}
 
               {/* Charts Section */}
               <Grid container spacing={3}>
+                {/* 첫 번째 줄 - 현금흐름 & 고정비/유동비 게이지 */}
                 <Grid item xs={12} md={8}>
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
-                        월별 매출 현황
+                        📊 6개월간 현금흐름 현황
                       </Typography>
-                      <RevenueChart />
+                      <CashFlowChart />
                     </CardContent>
                   </Card>
                 </Grid>
@@ -266,46 +330,106 @@ export default function FinanceDashboard() {
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
-                        카테고리별 지출 (3월)
+                        ⚖️ 고정비/유동비 게이지
                       </Typography>
-                      <ExpenseChart />
+                      <FixedVariableGauge />
                     </CardContent>
                   </Card>
                 </Grid>
 
-                {/* 두 번째 줄 차트들 */}
-                <Grid item xs={12} md={6}>
-                  <Card>
-                    <CardContent>
-                      <Typography variant="h6" gutterBottom>
-                        월간 통계 (Area Chart)
-                      </Typography>
-                      <MonthlyStatsChart />
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Card>
-                    <CardContent>
-                      <Typography variant="h6" gutterBottom>
-                        주간 매출 현황
-                      </Typography>
-                      <WeeklySalesChart />
-                    </CardContent>
-                  </Card>
-                </Grid>
-
-                {/* 세 번째 줄 - 수익 구조 분석 */}
+                {/* 두 번째 줄 - 폭포차트 */}
                 <Grid item xs={12}>
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
-                        수익 구조 분석
+                        💰 매출-매입-순이익 구조 분석 (폭포차트)
                       </Typography>
-                      <ProfitStructureChart />
+                      <WaterfallChart />
                     </CardContent>
                   </Card>
                 </Grid>
+
+                {/* 세 번째 줄 - 기존 차트들 */}
+                {dashboardData && !loading && (
+                  <>
+                    <Grid item xs={12} md={8}>
+                      <Card>
+                        <CardContent>
+                          <Typography variant="h6" gutterBottom>
+                            {selectedYear}년 월별 매출 현황
+                          </Typography>
+                          <RevenueChart data={dashboardData.chartData.revenueData} />
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <Card>
+                        <CardContent>
+                          <Typography variant="h6" gutterBottom>
+                            {selectedYear}년 카테고리별 지출
+                          </Typography>
+                          <ExpenseChart data={dashboardData.expenseData} />
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  </>
+                )}
+
+                {/* 네 번째 줄 - 추가 차트들 */}
+                {dashboardData && !loading && (
+                  <>
+                    <Grid item xs={12} md={6}>
+                      <Card>
+                        <CardContent>
+                          <Typography variant="h6" gutterBottom>
+                            {selectedYear}년 월간 통계
+                          </Typography>
+                          <MonthlyStatsChart data={dashboardData.chartData.monthlyStats} />
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  </>
+                )}
+                {dashboardData && !loading && (
+                  <Grid item xs={12} md={6}>
+                    <Card>
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom>
+                          {selectedYear}년 주간 매출 현황
+                        </Typography>
+                        <WeeklySalesChart />
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                )}
+
+                {/* 다섯 번째 줄 - 수익 구조 분석 */}
+                {dashboardData && !loading && (
+                  <Grid item xs={12}>
+                    <Card>
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom>
+                          {selectedYear}년 수익 구조 분석
+                        </Typography>
+                        <ProfitStructureChart data={dashboardData.chartData.profitStructure} />
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                )}
+
+                {/* 여섯 번째 줄 - 월별 상세 테이블 */}
+                {dashboardData && !loading && (
+                  <Grid item xs={12}>
+                    <Card>
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom>
+                          {selectedYear}년 월별 상세 데이터
+                        </Typography>
+                        <MonthlyDetailTable data={dashboardData.monthlyReports} />
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                )}
               </Grid>
             </Container>
           )}
