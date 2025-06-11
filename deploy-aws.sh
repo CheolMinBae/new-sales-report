@@ -4,7 +4,7 @@
 
 # 설정 변수들
 AWS_REGION="ap-northeast-2"  # 서울 리전
-AWS_ACCOUNT_ID="YOUR_AWS_ACCOUNT_ID"  # AWS 계정 ID를 입력하세요
+AWS_ACCOUNT_ID="342170456378"  # 실제 12자리 AWS 계정 ID를 입력하세요
 ECR_REPO_NAME="sales-report-dashboard"
 IMAGE_TAG="latest"
 CLUSTER_NAME="sales-report-cluster"

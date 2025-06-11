@@ -4,12 +4,12 @@
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "512",
   "memory": "1024",
-  "executionRoleArn": "arn:aws:iam::YOUR_AWS_ACCOUNT_ID:role/ecsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::YOUR_AWS_ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "executionRoleArn": "arn:aws:iam::342170456378:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::342170456378:role/ecsTaskExecutionRole",
   "containerDefinitions": [
     {
       "name": "sales-report-dashboard",
-      "image": "YOUR_AWS_ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/sales-report-dashboard:latest",
+      "image": "342170456378.dkr.ecr.ap-northeast-2.amazonaws.com/sales-report-dashboard:latest",
       "portMappings": [
         {
           "containerPort": 3000,
@@ -35,13 +35,7 @@
           "awslogs-stream-prefix": "ecs"
         }
       },
-      "mountPoints": [
-        {
-          "sourceVolume": "data-volume",
-          "containerPath": "/app/data",
-          "readOnly": false
-        }
-      ],
+      "mountPoints": [],
       "healthCheck": {
         "command": [
           "CMD-SHELL",
@@ -54,17 +48,5 @@
       }
     }
   ],
-  "volumes": [
-    {
-      "name": "data-volume",
-      "efsVolumeConfiguration": {
-        "fileSystemId": "fs-xxxxxxxxx",
-        "transitEncryption": "ENABLED",
-        "rootDirectory": "/",
-        "authorizationConfig": {
-          "accessPointId": "fsap-xxxxxxxxx"
-        }
-      }
-    }
-  ]
+  "volumes": []
 } 

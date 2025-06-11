@@ -33,12 +33,14 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# 빌드된 파일들 복사
-COPY --from=builder /app/public ./public
+# 빌드된 파일들 복사 (public 폴더는 필요시에만)
+# Next.js에서 public 폴더가 없을 수 있으므로 주석처리
+# COPY --from=builder /app/public ./public
 
 # 빌드 결과물 복사
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 
 # 데이터 디렉토리 생성 및 권한 설정
 RUN mkdir -p ./data && chown nextjs:nodejs ./data
@@ -51,4 +53,4 @@ ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
 # 서버 시작
-CMD ["node", "server.js"] 
+CMD ["npm", "start"] 
