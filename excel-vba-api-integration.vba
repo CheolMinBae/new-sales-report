@@ -5,7 +5,7 @@
 Option Explicit
 
 ' API 기본 설정
-Private Const API_BASE_URL As String = "http://localhost:3001/api"
+Private Const API_BASE_URL As String = "http://sales-report-alb-848109300.ap-northeast-2.elb.amazonaws.com/api"
 Private Const EXCEL_VERSION As String = "Excel VBA v1.0"
 
 ' ===== 메인 버튼 이벤트 =====

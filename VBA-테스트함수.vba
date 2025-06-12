@@ -26,7 +26,7 @@ Function CallTestAPI() As String
     Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
     
     ' API URL 설정 (메시지 파라미터 포함)
-    url = "http://localhost:3001/api/test?message=VBA에서 안녕하세요!"
+    url = "http://sales-report-alb-848109300.ap-northeast-2.elb.amazonaws.com/api/test?message=VBA에서 안녕하세요!"
     
     ' HTTP GET 요청
     http.Open "GET", url, False
@@ -104,7 +104,7 @@ Function TestPortConnection(port As Integer) As String
     On Error GoTo ErrorHandler
     
     Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
-    url = "http://localhost:" & port & "/api/test"
+    url = "http://sales-report-alb-848109300.ap-northeast-2.elb.amazonaws.com/api/test"
     
     http.Open "GET", url, False
     http.SetTimeouts 1000, 1000, 1000, 1000  ' 1초 타임아웃

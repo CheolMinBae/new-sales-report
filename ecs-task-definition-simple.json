@@ -1,0 +1,39 @@
+{
+  "family": "sales-report-dashboard",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::342170456378:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "sales-report-dashboard",
+      "image": "342170456378.dkr.ecr.ap-northeast-2.amazonaws.com/sales-report-dashboard:amd64-v1",
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "PORT",
+          "value": "3000"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/sales-report-dashboard",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+} 
