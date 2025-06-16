@@ -16,6 +16,7 @@ export interface MonthlyFinanceData {
   // 매출 관련
   salesRevenue: number;
   otherIncome: number;
+  creditSales: number;
   totalRevenue: number;
   
   // 비용 관련
