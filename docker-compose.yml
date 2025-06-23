@@ -1,22 +1,58 @@
 version: '3.8'
 
 services:
-  sales-report-dashboard:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  sales-report:
+    build: .
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
-      - PORT=3000
-    volumes:
-      # 데이터 영속화를 위한 볼륨 마운트
-      - ./data:/app/data
-    restart: unless-stopped
+      # Node.js Environment
+      NODE_ENV: production
+      PORT: 3000
+      
+      # API Configuration
+      NEXT_PUBLIC_API_URL: http://turfintra.com:3002
+      
+      # S3 Configuration
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-sales-report-data}
+      S3_REGION: ${S3_REGION:-ap-northeast-2}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+      
+      # Optional: Database Configuration (if needed)
+      DATABASE_URL: ${DATABASE_URL}
+      
+    # Environment file (optional)
+    env_file:
+      - .env.local
+      - .env.production
+      
+    # Health check
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/debug"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s 
+      
+    # Restart policy
+    restart: unless-stopped
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # Optional: Redis for caching (if needed)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  redis_data: 
