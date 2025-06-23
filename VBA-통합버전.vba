@@ -6,9 +6,9 @@
 Option Explicit
 
 ' 재무 데이터 구조체 (Dictionary 대신 사용)
-Type FinanceData
+Type financeData
     salesRevenue As Double     ' 매출
-    otherIncome As Double      ' 기타수입  
+    otherIncome As Double      ' 기타수입
     rentExpense As Double      ' 임대료
     laborExpense As Double     ' 인건비
     materialExpense As Double  ' 재료비
@@ -19,7 +19,7 @@ Type FinanceData
 End Type
 
 ' API 기본 설정
-Private Const API_BASE_URL As String = "http://sales-report-alb-848109300.ap-northeast-2.elb.amazonaws.com/api"
+Private Const API_BASE_URL As String = "http://turfintra.com:3002/api"
 Private Const EXCEL_VERSION As String = "Excel VBA v1.0"
 
 ' ===== 메인 버튼 이벤트 =====
@@ -84,7 +84,7 @@ Sub 전체년도_데이터전송()
     dataPreview = GenerateDataPreview(ws, collectedData)
     
     ' 전송 확인 메시지 (데이터 미리보기 포함)
-    confirmMsg = "📊 전체 년도 데이터 전송 확인" & vbCrLf & vbCrLf
+    confirmMsg = "🚀 전체 년도 데이터 전송 확인" & vbCrLf & vbCrLf
     confirmMsg = confirmMsg & "📋 시트명: " & ws.Name & vbCrLf
     confirmMsg = confirmMsg & "📅 범위: 2020년 ~ 2025년" & vbCrLf
     confirmMsg = confirmMsg & "⚡ 데이터 크기: " & Len(collectedData) & " 문자" & vbCrLf & vbCrLf
@@ -114,7 +114,7 @@ End Sub
 Sub 데이터전송_미리보기()
     Dim year As Integer
     Dim month As Integer
-    Dim financeData As FinanceData
+    Dim financeData As financeData
     Dim msg As String
     
     year = GetCurrentYear()
@@ -777,7 +777,6 @@ Function SendBulkDataToAPIWithData(bulkData As String, ws As Worksheet) As Boole
     Dim url As String
     Dim jsonData As String
     Dim response As String
-    Dim confirmMsg As String
     
     On Error GoTo ErrorHandler
     
@@ -801,7 +800,7 @@ Function SendBulkDataToAPIWithData(bulkData As String, ws As Worksheet) As Boole
     ' HTTP 요청 설정 및 전송
     http.Open "POST", url, False
     http.SetRequestHeader "Content-Type", "application/json"
-    http.SetTimeouts 30000, 30000, 30000, 30000  ' 30초 타임아웃
+    http.SetTimeouts 60000, 60000, 60000, 60000  ' 60초 타임아웃 (대용량 데이터)
     
     ' 요청 전송
     http.Send jsonData
@@ -823,7 +822,7 @@ Function SendBulkDataToAPIWithData(bulkData As String, ws As Worksheet) As Boole
         Else
             SendBulkDataToAPIWithData = False
             MsgBox "📡 서버 응답: ⚠️ 처리 오류" & vbCrLf & vbCrLf & _
-                   response, vbExclamation, "서버 처리 오류"
+                   "응답 내용: " & response, vbExclamation, "서버 처리 오류"
         End If
     Else
         SendBulkDataToAPIWithData = False
@@ -982,7 +981,7 @@ Function SendFinanceDataToAPI(year As Integer, month As Integer) As Boolean
     url = API_BASE_URL & "/reports/submit"
     
     ' 엑셀에서 재무 데이터 읽기
-    Dim financeData As FinanceData
+    Dim financeData As financeData
     financeData = ReadFinanceDataFromCells()
     
     ' JSON 데이터 생성
@@ -1082,8 +1081,8 @@ End Function
 
 
 ' 엑셀 시트들에서 재무 데이터 읽기 (다른 탭들에서 자동으로 가져오기)
-Function ReadFinanceDataFromCells() As FinanceData
-    Dim data As FinanceData
+Function ReadFinanceDataFromCells() As financeData
+    Dim data As financeData
     Dim year As Integer
     Dim month As Integer
     

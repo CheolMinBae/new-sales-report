@@ -187,6 +187,15 @@ export default function FinanceDashboard() {
     })) || [];
   };
 
+  const getIncomeBreakdownData = () => {
+    return dashboardData?.monthlyReports.map(data => ({
+      month: `${data.month}월`,
+      cashSales: data.salesRevenue - (data.creditSales || 0), // 현금매출 = 총매출 - 외상매출
+      creditSales: data.creditSales || 0, // 외상매출
+      otherIncome: data.otherIncome || 0 // 기타수입
+    })) || [];
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -449,7 +458,7 @@ export default function FinanceDashboard() {
                 <Grid item xs={12} md={6}>
                   <Card>
                     <CardContent>
-                      <IncomeBreakdownChart data={getChartData()} />
+                      <IncomeBreakdownChart data={getIncomeBreakdownData()} />
                     </CardContent>
                   </Card>
                 </Grid>

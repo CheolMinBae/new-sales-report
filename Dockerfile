@@ -17,7 +17,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Next.js 텔레메트리 비활성화
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # pnpm 활성화 및 빌드
 RUN corepack enable pnpm && pnpm build
@@ -26,8 +26,8 @@ RUN corepack enable pnpm && pnpm build
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # 사용자 생성
 RUN addgroup --system --gid 1001 nodejs
@@ -49,8 +49,15 @@ USER nextjs
 
 EXPOSE 3002
 
-ENV PORT 3002
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3002
+ENV HOSTNAME="0.0.0.0"
+
+# 기본 S3 설정 (런타임에서 오버라이드 가능)
+ENV S3_BUCKET_NAME=sales-report-data
+ENV S3_REGION=ap-northeast-2
+
+# Next.js Environment Variables
+ENV NEXT_PUBLIC_API_URL=http://turfintra.com:3002
 
 # 서버 시작
-CMD ["npm", "start"] 
+CMD ["pnpm", "start"] 

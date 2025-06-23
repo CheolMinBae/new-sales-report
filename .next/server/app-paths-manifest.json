@@ -1,1 +1,4 @@
-{}
+{
+  "/api/bulk-data/submit/route": "app/api/bulk-data/submit/route.js",
+  "/api/excel/route": "app/api/excel/route.js"
+}
