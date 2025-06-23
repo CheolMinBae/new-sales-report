@@ -29,6 +29,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# pnpm 활성화 (런타임에서도 사용 가능하도록)
+RUN corepack enable pnpm
+
 # 사용자 생성
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
