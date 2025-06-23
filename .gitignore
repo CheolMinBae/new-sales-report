@@ -6,6 +6,7 @@
 ~$*.xltx
 ~$*.xltm
 .env
+*.sh
 # Excel 백업 파일들
 *.xlk
 *.bak

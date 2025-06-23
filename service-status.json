@@ -1,0 +1,196 @@
+{
+    "services": [
+        {
+            "serviceArn": "arn:aws:ecs:ap-northeast-2:342170456378:service/sales-report-cluster/sales-report-service",
+            "serviceName": "sales-report-service",
+            "clusterArn": "arn:aws:ecs:ap-northeast-2:342170456378:cluster/sales-report-cluster",
+            "loadBalancers": [
+                {
+                    "targetGroupArn": "arn:aws:elasticloadbalancing:ap-northeast-2:342170456378:targetgroup/sales-report-targets/f84e3d77b6bfed31",
+                    "containerName": "sales-report-dashboard",
+                    "containerPort": 3000
+                }
+            ],
+            "serviceRegistries": [],
+            "status": "ACTIVE",
+            "desiredCount": 1,
+            "runningCount": 0,
+            "pendingCount": 1,
+            "launchType": "FARGATE",
+            "platformVersion": "LATEST",
+            "platformFamily": "Linux",
+            "taskDefinition": "arn:aws:ecs:ap-northeast-2:342170456378:task-definition/sales-report-dashboard:1",
+            "deploymentConfiguration": {
+                "deploymentCircuitBreaker": {
+                    "enable": false,
+                    "rollback": false
+                },
+                "maximumPercent": 200,
+                "minimumHealthyPercent": 100
+            },
+            "deployments": [
+                {
+                    "id": "ecs-svc/4949218892519820893",
+                    "status": "PRIMARY",
+                    "taskDefinition": "arn:aws:ecs:ap-northeast-2:342170456378:task-definition/sales-report-dashboard:1",
+                    "desiredCount": 1,
+                    "pendingCount": 1,
+                    "runningCount": 0,
+                    "failedTasks": 2,
+                    "createdAt": "2025-06-11T19:30:59+09:00",
+                    "updatedAt": "2025-06-11T19:31:14.965000+09:00",
+                    "launchType": "FARGATE",
+                    "platformVersion": "1.4.0",
+                    "platformFamily": "Linux",
+                    "networkConfiguration": {
+                        "awsvpcConfiguration": {
+                            "subnets": [
+                                "subnet-0222ee8450a1017ad",
+                                "subnet-0904b7e84c92ca3af",
+                                "subnet-0318a0883b999c804",
+                                "subnet-054898617c89bd743"
+                            ],
+                            "securityGroups": [
+                                "sg-045325c7a6ab3e36a"
+                            ],
+                            "assignPublicIp": "ENABLED"
+                        }
+                    },
+                    "rolloutState": "IN_PROGRESS",
+                    "rolloutStateReason": "ECS deployment ecs-svc/4949218892519820893 in progress."
+                },
+                {
+                    "id": "ecs-svc/8881300651504524472",
+                    "status": "ACTIVE",
+                    "taskDefinition": "arn:aws:ecs:ap-northeast-2:342170456378:task-definition/sales-report-dashboard:1",
+                    "desiredCount": 1,
+                    "pendingCount": 0,
+                    "runningCount": 0,
+                    "failedTasks": 4,
+                    "createdAt": "2025-06-11T19:22:02.185000+09:00",
+                    "updatedAt": "2025-06-11T19:31:07.213000+09:00",
+                    "launchType": "FARGATE",
+                    "platformVersion": "1.4.0",
+                    "platformFamily": "Linux",
+                    "networkConfiguration": {
+                        "awsvpcConfiguration": {
+                            "subnets": [
+                                "subnet-0222ee8450a1017ad",
+                                "subnet-0904b7e84c92ca3af",
+                                "subnet-0318a0883b999c804",
+                                "subnet-054898617c89bd743"
+                            ],
+                            "securityGroups": [
+                                "sg-045325c7a6ab3e36a"
+                            ],
+                            "assignPublicIp": "ENABLED"
+                        }
+                    },
+                    "rolloutState": "IN_PROGRESS",
+                    "rolloutStateReason": "ECS deployment ecs-svc/8881300651504524472 in progress."
+                }
+            ],
+            "roleArn": "arn:aws:iam::342170456378:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS",
+            "events": [
+                {
+                    "id": "2e551049-2489-439b-b74a-bdb41e267b46",
+                    "createdAt": "2025-06-11T19:34:55.311000+09:00",
+                    "message": "(service sales-report-service) has started 1 tasks: (task 40710e39580e46938728e436c4165061)."
+                },
+                {
+                    "id": "41ebc312-64f4-4968-b42d-58a43cff3f38",
+                    "createdAt": "2025-06-11T19:32:51.930000+09:00",
+                    "message": "(service sales-report-service) has started 1 tasks: (task 62a78014ab7048d2924319dc66c5f8b7)."
+                },
+                {
+                    "id": "2f92a4aa-5706-495b-a9cb-2f197de78b17",
+                    "createdAt": "2025-06-11T19:31:15.623000+09:00",
+                    "message": "(service sales-report-service) has started 1 tasks: (task 4adf7abeeb334bf88397d3f276c33534)."
+                },
+                {
+                    "id": "564a5238-f830-480c-8458-82cbb63133fe",
+                    "createdAt": "2025-06-11T19:29:51.250000+09:00",
+                    "message": "(service sales-report-service) has started 1 tasks: (task 196aaba066b34f378edafd5845dcaefd)."
+                },
+                {
+                    "id": "bc9d3bea-9b5a-4cf4-b1e2-bb25a785227b",
+                    "createdAt": "2025-06-11T19:27:51.488000+09:00",
+                    "message": "(service sales-report-service) has started 1 tasks: (task 70e197e5d1e340418e221bddd6108000)."
+                },
+                {
+                    "id": "45cb1fee-236e-4017-93f7-76e632598b72",
+                    "createdAt": "2025-06-11T19:25:51.871000+09:00",
+                    "message": "(service sales-report-service) has started 1 tasks: (task 0ab8b8bd5b204e9780297bcefd8a52c7)."
+                },
+                {
+                    "id": "25333244-cdd9-40bb-93f7-b004f48cdbcb",
+                    "createdAt": "2025-06-11T19:23:53.614000+09:00",
+                    "message": "(service sales-report-service) has started 1 tasks: (task 7ce8bfaa1d1e42da9e26b783dfd96246)."
+                },
+                {
+                    "id": "ae9a993a-db89-4506-99be-4d6e97c9d90b",
+                    "createdAt": "2025-06-11T19:22:18.753000+09:00",
+                    "message": "(service sales-report-service) has started 1 tasks: (task 8488a6c6f363443fad75d829874653d0)."
+                },
+                {
+                    "id": "2c6eaa72-0ce4-4bee-8814-a5f676ca4bd1",
+                    "createdAt": "2025-06-11T19:21:52.176000+09:00",
+                    "message": "(service sales-report-service) has started 1 tasks: (task b2e1b9d96b6b44fb8bc95198f057d1ed)."
+                },
+                {
+                    "id": "4a59400e-318a-429f-bf20-7b15c84c2f3b",
+                    "createdAt": "2025-06-11T19:19:54.753000+09:00",
+                    "message": "(service sales-report-service) has started 1 tasks: (task 97c83fa9ca494e33b6c7e1892e6399eb)."
+                },
+                {
+                    "id": "e5e113bf-03df-4d06-a3b0-d51ace91b463",
+                    "createdAt": "2025-06-11T19:17:59.703000+09:00",
+                    "message": "(service sales-report-service) has started 1 tasks: (task 9f154d8dc52942fb835596b27cd602fa)."
+                },
+                {
+                    "id": "e5c68b48-ac8b-4c04-818c-4c924a872bf8",
+                    "createdAt": "2025-06-11T19:16:00.996000+09:00",
+                    "message": "(service sales-report-service) has started 1 tasks: (task ea2f20db8d0b4f5aaf666ee4053a412c)."
+                },
+                {
+                    "id": "72fc54af-4e68-4ba7-a725-6ddad27f1ff3",
+                    "createdAt": "2025-06-11T19:14:02.605000+09:00",
+                    "message": "(service sales-report-service) has started 1 tasks: (task 709c6bf178fd4c8795c2d1898f92447e)."
+                },
+                {
+                    "id": "3b46c844-0a59-4518-8ce4-f305f4036fbd",
+                    "createdAt": "2025-06-11T19:12:05.660000+09:00",
+                    "message": "(service sales-report-service) has started 1 tasks: (task b4fc66028d7f45c1b4ae7ed11069228a)."
+                }
+            ],
+            "createdAt": "2025-06-11T19:11:51.232000+09:00",
+            "placementConstraints": [],
+            "placementStrategy": [],
+            "networkConfiguration": {
+                "awsvpcConfiguration": {
+                    "subnets": [
+                        "subnet-0222ee8450a1017ad",
+                        "subnet-0904b7e84c92ca3af",
+                        "subnet-0318a0883b999c804",
+                        "subnet-054898617c89bd743"
+                    ],
+                    "securityGroups": [
+                        "sg-045325c7a6ab3e36a"
+                    ],
+                    "assignPublicIp": "ENABLED"
+                }
+            },
+            "healthCheckGracePeriodSeconds": 0,
+            "schedulingStrategy": "REPLICA",
+            "deploymentController": {
+                "type": "ECS"
+            },
+            "createdBy": "arn:aws:iam::342170456378:user/cheolmin-mac-docker",
+            "enableECSManagedTags": false,
+            "propagateTags": "NONE",
+            "enableExecuteCommand": false,
+            "availabilityZoneRebalancing": "DISABLED"
+        }
+    ],
+    "failures": []
+}

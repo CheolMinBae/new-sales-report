@@ -15,6 +15,7 @@ Type financeData
     operatingExpense As Double ' 운영비
     otherExpense As Double     ' 기타비용
     cashBalance As Double      ' 현금잔고
+    creditSales As Double      ' 외상매출금액 (추가)
 End Type
 
 ' API 기본 설정
@@ -995,6 +996,7 @@ Function SendFinanceDataToAPI(year As Integer, month As Integer) As Boolean
     jsonData = jsonData & """operatingExpense"": " & financeData.operatingExpense & ","
     jsonData = jsonData & """otherExpense"": " & financeData.otherExpense & ","
     jsonData = jsonData & """cashBalance"": " & financeData.cashBalance & ","
+    jsonData = jsonData & """creditSales"": " & financeData.creditSales & ","
     jsonData = jsonData & """submittedBy"": """ & Application.UserName & """"
     jsonData = jsonData & "}"
     
@@ -1012,6 +1014,7 @@ Function SendFinanceDataToAPI(year As Integer, month As Integer) As Boolean
     confirmMsg = confirmMsg & "운영비: " & Format(financeData.operatingExpense, "#,##0") & "원" & vbCrLf
     confirmMsg = confirmMsg & "기타비용: " & Format(financeData.otherExpense, "#,##0") & "원" & vbCrLf
     confirmMsg = confirmMsg & "현금잔고: " & Format(financeData.cashBalance, "#,##0") & "원" & vbCrLf
+    confirmMsg = confirmMsg & "외상매출금액: " & Format(financeData.creditSales, "#,##0") & "원" & vbCrLf
     confirmMsg = confirmMsg & "전송자: " & Application.UserName & vbCrLf & vbCrLf
     confirmMsg = confirmMsg & "📜 JSON 파라미터:" & vbCrLf
     confirmMsg = confirmMsg & jsonData & vbCrLf & vbCrLf
@@ -1090,6 +1093,7 @@ Function ReadFinanceDataFromCells() As financeData
     ' 각 시트에서 해당 월 데이터 읽어오기 (실제 시트 데이터에 맞게)
     data.salesRevenue = GetSalesRevenueFromSheets(year, month)      ' 매출입금
     data.otherIncome = GetOtherIncomeFromSheets(year, month)        ' 기타입금
+    data.creditSales = GetCreditSalesFromSheets(year, month)        ' 외상매출금액 (추가)
     data.rentExpense = GetExpenseFromSheets(year, month, "비용결제")  ' 비용결제에서 임대료 부분
     data.laborExpense = GetExpenseFromSheets(year, month, "비용결제") ' 비용결제에서 인건비 부분  
     data.materialExpense = GetExpenseFromSheets(year, month, "비용결제") ' 비용결제에서 재료비 부분
@@ -2757,7 +2761,7 @@ Function CallTestAPI() As String
     Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
     
     ' API URL 설정 (메시지 파라미터 포함)
-    url = "http://localhost:3001/api/test?message=VBA에서 안녕하세요!"
+    url = "http://sales-report-alb-848109300.ap-northeast-2.elb.amazonaws.com/api/test?message=VBA에서 안녕하세요!"
     
     ' HTTP GET 요청
     http.Open "GET", url, False
@@ -2847,7 +2851,7 @@ Function TestPortConnection(port As Integer) As String
     On Error GoTo ErrorHandler
     
     Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
-    url = "http://localhost:" & port & "/api/test"
+    url = "http://sales-report-alb-848109300.ap-northeast-2.elb.amazonaws.com/api/test"
     
     http.Open "GET", url, False
     http.SetTimeouts 1000, 1000, 1000, 1000  ' 1초 타임아웃
@@ -3181,4 +3185,25 @@ Sub 통합데이터_전송()
     Else
         MsgBox "모든 데이터 전송이 실패했습니다." & vbCrLf & "데이터와 서버 상태를 확인해주세요.", vbCritical, "전송 실패"
     End If
-End Sub 
+End Sub
+
+' 외상매출금액 데이터 가져오기
+Function GetCreditSalesFromSheets(year As Integer, month As Integer) As Double
+    Dim ws As Worksheet
+    Dim creditSales As Double
+    Dim row As Long
+    Dim col As Long
+    
+    ' 두 번째 시트(20~25년 정리표)에서 데이터 수집
+    Set ws = ThisWorkbook.Sheets(2)
+    
+    ' 해당 월의 데이터가 있는 행 찾기
+    row = FindKeywordInSheet(ws, CStr(year) & "년 " & CStr(month) & "월")
+    If row > 0 Then
+        ' 외상매출금액 열 찾기 (예: 5번째 열)
+        col = 5
+        creditSales = ws.Cells(row, col).Value
+    End If
+    
+    GetCreditSalesFromSheets = creditSales
+End Function

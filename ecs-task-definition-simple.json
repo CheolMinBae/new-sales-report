@@ -5,11 +5,10 @@
   "cpu": "512",
   "memory": "1024",
   "executionRoleArn": "arn:aws:iam::342170456378:role/ecsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::342170456378:role/ecsTaskExecutionRole",
   "containerDefinitions": [
     {
       "name": "sales-report-dashboard",
-      "image": "342170456378.dkr.ecr.ap-northeast-2.amazonaws.com/sales-report-dashboard:latest",
+      "image": "342170456378.dkr.ecr.ap-northeast-2.amazonaws.com/sales-report-dashboard:amd64-v1",
       "portMappings": [
         {
           "containerPort": 3000,
@@ -34,19 +33,7 @@
           "awslogs-region": "ap-northeast-2",
           "awslogs-stream-prefix": "ecs"
         }
-      },
-      "mountPoints": [],
-      "healthCheck": {
-        "command": [
-          "CMD-SHELL",
-          "curl -f http://localhost:3000/api/debug || exit 1"
-        ],
-        "interval": 30,
-        "timeout": 5,
-        "retries": 3,
-        "startPeriod": 60
       }
     }
-  ],
-  "volumes": []
+  ]
 } 

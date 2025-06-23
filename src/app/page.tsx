@@ -45,6 +45,7 @@ import FixedVariableGauge from '@/components/charts/FixedVariableGauge';
 import WaterfallChart from '@/components/charts/WaterfallChart';
 import MonthlyDetailTable from '@/components/MonthlyDetailTable';
 import MonthlyReportManagement from '@/components/MonthlyReportManagement';
+import { IncomeBreakdownChart } from '@/components/charts/IncomeBreakdownChart';
 
 const theme = createTheme({
   palette: {
@@ -172,6 +173,19 @@ export default function FinanceDashboard() {
     { id: 'dashboard', label: '전체 누적 대시보드', icon: <Dashboard /> },
     { id: 'monthly', label: '월별 레포트 관리', icon: <Receipt /> },
   ];
+
+  // 차트 데이터 변환 함수 수정
+  const getChartData = () => {
+    return dashboardData?.monthlyReports.map(data => ({
+      period: `${data.year}-${data.month < 10 ? '0' + data.month : data.month}`,
+      revenue: data.totalRevenue,
+      expense: data.totalExpense,
+      netIncome: data.netIncome,
+      cashSales: data.salesRevenue - data.creditSales, // 현금매출 = 총매출 - 외상매출
+      creditSales: data.creditSales, // 외상매출
+      otherIncome: data.otherIncome // 기타수입
+    })) || [];
+  };
 
   return (
     <ThemeProvider theme={theme}>
@@ -430,6 +444,15 @@ export default function FinanceDashboard() {
                     </Card>
                   </Grid>
                 )}
+
+                {/* 수입 구성 분석 차트 추가 */}
+                <Grid item xs={12} md={6}>
+                  <Card>
+                    <CardContent>
+                      <IncomeBreakdownChart data={getChartData()} />
+                    </CardContent>
+                  </Card>
+                </Grid>
               </Grid>
             </Container>
           )}
